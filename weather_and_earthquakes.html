@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            div {
+                font-size: 24pt;
+                margin: 10px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div>
+            Today's high temperature is <span id="hightemp"> </span>F.
+        </div>
+        <div>
+            Sunrise is <span id="sunrise"> </span>.
+        </div>
+        <div>
+            Sunset is <span id="sunset"> </span>.
+        </div>
+        <div>
+            The most recent earthquake in this area was magnitude <span id="quakeMag"> </span>
+            with epicenter at <a id="mapLink" href=""><span id="quakeLat"> </span>, <span id="quakeLon"> </span></a>.
+        </div>
+        <script>
+            // See more available APIs at https://github.com/toddmotto/public-apis
+
+            // Example code originally from https://developer.yahoo.com/weather/
+            // that page also has more documentation on the weather API
+
+            // This function will be called automatically once the Yahoo api returns with data.
+            var weatherCallback = function(data) {
+                // Look at the 10-day forecast. The first one (item zero) is for today
+                var forecast = data.query.results.channel.item.forecast[0];
+                document.getElementById('hightemp').firstChild.nodeValue = forecast.high;
+
+                var astronomy = data.query.results.channel.astronomy;
+                document.getElementById('sunrise').firstChild.nodeValue = astronomy.sunrise;
+                document.getElementById('sunset').firstChild.nodeValue = astronomy.sunset;
+            };
+
+            // Documentation on earthquake API is http://earthquake.usgs.gov/fdsnws/event/1/
+            
+            // This function will be called automatically once the earthquake API returns with data
+            var quakeCallback = function(data) {
+                var latestQuake = data.features[0];
+
+                document.getElementById('quakeMag').firstChild.nodeValue = latestQuake.properties.mag;
+
+                var quakeLocation = latestQuake.geometry.coordinates;
+                var quakeLat = quakeLocation[1];
+                var quakeLon = quakeLocation[0];
+                document.getElementById('quakeLat').firstChild.nodeValue = quakeLat;
+                document.getElementById('quakeLon').firstChild.nodeValue = quakeLon;
+
+                // Put together a URL that will link to Google maps centered on the earthquake epicenter
+                // at zoom level 10
+                var mapURL = "https://www.google.com/maps/@" + quakeLat + "," + quakeLon + ",10z";
+                document.getElementById('mapLink').href = mapURL;
+            }
+
+        </script>
+
+        <!-- This will get data from the Yahoo Weather API and then hand it to the weather callback -->
+        <script src="https://query.yahooapis.com/v1/public/yql?q=select * from weather.forecast where woeid in (select woeid from geo.places(1) where text='san mateo, ca')&format=json&callback=weatherCallback"></script>
+
+        <!-- This will return earthquakes near San Mateo in the past 30 days -->
+        <script src="http://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=36&minlongitude=-123&maxlatitude=39&maxlongitude=-121&callback=quakeCallback"></script>
+    </body>
+</html>
